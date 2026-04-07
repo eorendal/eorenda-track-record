@@ -1,5 +1,2 @@
-date,symbol,action,quantity,price
-2026-04-07,XLK,6,136.57
-2026-04-07,XLK,6,136.37
-2026-04-07,XLK,6,135.79
+date,ticker,quantity,price
 2026-04-07,XLK,2,135.84
