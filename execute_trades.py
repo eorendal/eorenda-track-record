@@ -12,7 +12,9 @@ PORT = 7496   # LIVE account
 CLIENT_ID = 1
 
 CAPITAL = 1500
-ALLOCATION_BUFFER = 0.9   # safety buffer
+ALLOCATION_BUFFER = 0.9
+
+MAX_SHARES = 2   # CRITICAL: hard cap for IBKR constraint
 
 LOCK_FILE = "execution.lock"
 
@@ -159,7 +161,6 @@ def execute():
 
     ib = connect_ibkr()
 
-    # Sync account (important)
     ib.reqAccountSummary()
 
     positions = get_positions(ib)
@@ -183,14 +184,20 @@ def execute():
             print(f"Skipping {ticker} (no price)")
             continue
 
-        quantity = int(allocation / price)
+        calculated_qty = int(allocation / price)
+
+        # ==============================
+        # HARD SHARE CAP (CRITICAL FIX)
+        # ==============================
+
+        quantity = min(calculated_qty, MAX_SHARES)
 
         if quantity <= 0:
             print(f"Skipping {ticker} (size too small)")
             continue
 
         # ==============================
-        # ORDER (CASH SAFE)
+        # ORDER
         # ==============================
 
         order = MarketOrder("BUY", quantity)
