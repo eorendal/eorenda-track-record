@@ -2,17 +2,18 @@ from ib_insync import *
 import pandas as pd
 from datetime import datetime
 import os
-import yfinance as yf
 
 # ==============================
 # CONFIG
 # ==============================
 
 HOST = "127.0.0.1"
-PORT = 7496
+PORT = 7496   # LIVE account
 CLIENT_ID = 1
 
 CAPITAL = 1500
+ALLOCATION_BUFFER = 0.9   # safety buffer
+
 LOCK_FILE = "execution.lock"
 
 BASE_DIR = "/Users/whizmindsacademy/quant_lab"
@@ -69,20 +70,28 @@ def get_positions(ib):
     return pos_dict
 
 # ==============================
-# PRICE FETCH (YFINANCE FALLBACK)
+# IBKR PRICE FETCH
 # ==============================
 
-def get_price(ticker):
+def get_price_ibkr(ib, contract):
     try:
-        data = yf.download(ticker, period="1d", interval="1m", progress=False)
+        data = ib.reqMktData(contract, "", False, False)
+        ib.sleep(3)
 
-        if data.empty:
+        if data.last and data.last > 0:
+            return float(data.last)
+
+        elif data.bid and data.ask and data.bid > 0 and data.ask > 0:
+            return float((data.bid + data.ask) / 2)
+
+        elif data.close and data.close > 0:
+            return float(data.close)
+
+        else:
             return None
 
-        return float(data["Close"].iloc[-1])
-
     except Exception as e:
-        print(f"Price fetch error for {ticker}: {e}")
+        print(f"IBKR price error: {e}")
         return None
 
 # ==============================
@@ -117,15 +126,11 @@ def update_equity_curve():
         return
 
     df = pd.read_csv(file_path)
-
     last_nav = df.iloc[-1]["nav"]
-
-    # Placeholder: no PnL calc yet
-    new_nav = last_nav
 
     new_row = pd.DataFrame([{
         "date": datetime.today().date(),
-        "nav": new_nav,
+        "nav": last_nav,
         "return": 0.0
     }])
 
@@ -154,6 +159,9 @@ def execute():
 
     ib = connect_ibkr()
 
+    # Sync account (important)
+    ib.reqAccountSummary()
+
     positions = get_positions(ib)
 
     for s in signals:
@@ -164,9 +172,12 @@ def execute():
             print(f"Skipping {ticker} (already held)")
             continue
 
-        allocation = CAPITAL * weight
+        allocation = CAPITAL * weight * ALLOCATION_BUFFER
 
-        price = get_price(ticker)
+        contract = Stock(ticker, "SMART", "USD")
+        ib.qualifyContracts(contract)
+
+        price = get_price_ibkr(ib, contract)
 
         if price is None or price == 0:
             print(f"Skipping {ticker} (no price)")
@@ -174,19 +185,29 @@ def execute():
 
         quantity = int(allocation / price)
 
-        if quantity == 0:
+        if quantity <= 0:
             print(f"Skipping {ticker} (size too small)")
             continue
 
-        contract = Stock(ticker, "SMART", "USD")
-        ib.qualifyContracts(contract)
+        # ==============================
+        # ORDER (CASH SAFE)
+        # ==============================
 
         order = MarketOrder("BUY", quantity)
-        ib.placeOrder(contract, order)
+        order.tif = "DAY"
+        order.outsideRth = False
 
-        print(f"BUY {ticker} | Qty: {quantity} | Price: ~{price}")
+        trade = ib.placeOrder(contract, order)
 
-        log_trade(ticker, quantity, price)
+        ib.sleep(5)
+
+        status = trade.orderStatus.status
+
+        if status in ["PreSubmitted", "Submitted", "Filled"]:
+            print(f"ORDER ACCEPTED {ticker} | Qty: {quantity} | Price: ~{price} | Status: {status}")
+            log_trade(ticker, quantity, price)
+        else:
+            print(f"FAILED {ticker} | Status: {status}")
 
         ib.sleep(1)
 
