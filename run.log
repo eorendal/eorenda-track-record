@@ -1,1 +1,18 @@
 
+[                       0%                       ][                       0%                       ][**********************60%****                   ]  3 of 5 completed[**********************60%****                   ]  3 of 5 completed[*********************100%***********************]  5 of 5 completed
+RUN TIME: 2026-04-09 06:00:05.051553
+
+========== EORENDA LIVE SIGNAL ==========
+{'timestamp': datetime.datetime(2026, 4, 9, 6, 0, 5, 684504), 'ticker': 'XLK', 'action': 'BUY', 'weight': 0.4005}
+{'timestamp': datetime.datetime(2026, 4, 9, 6, 0, 5, 684536), 'ticker': 'QQQ', 'action': 'BUY', 'weight': 0.3301}
+{'timestamp': datetime.datetime(2026, 4, 9, 6, 0, 5, 684541), 'ticker': 'DIA', 'action': 'BUY', 'weight': 0.2694}
+========================================
+
+
+========== EXECUTION ENGINE ==========
+RUN TIME: 2026-04-09 06:01:02.283939
+ORDER ACCEPTED XLK | Qty: 2 | Price: ~141.6 | Status: PreSubmitted
+Skipping QQQ (size too small)
+Skipping DIA (size too small)
+=====================================
+
