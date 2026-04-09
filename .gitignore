@@ -4,3 +4,4 @@ __pycache__/
 *.log
 execution.lock
 output/
+.DS_Store
