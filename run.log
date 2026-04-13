@@ -76,3 +76,43 @@ ORDER ACCEPTED XLK | Qty: 2 | Price: ~142.02 | Status: PreSubmitted
 failed to store: -61
 To https://github.com/eorendal/eorenda-track-record.git
    d9ae625..78a2220  main -> main
+[main 074478c] AUTO LOG 2026-04-12
+ 3 files changed, 155 insertions(+), 228 deletions(-)
+ create mode 100644 execute_test.py
+API connection failed: ConnectionRefusedError(61, "Connect call failed ('127.0.0.1', 7497)")
+Make sure API port on TWS/IBG is open
+[ERROR] IBKR CONNECTION FAILED
+failed to store: -61
+To https://github.com/eorendal/eorenda-track-record.git
+   78a2220..074478c  main -> main
+[                       0%                       ][*******************   40%                       ]  2 of 5 completed[**********************60%****                   ]  3 of 5 completed[**********************80%*************          ]  4 of 5 completed[*********************100%***********************]  5 of 5 completed
+
+5 Failed downloads:
+['SPY', 'QQQ', 'XLF', 'XLK', 'DIA']: TypeError("'NoneType' object is not subscriptable")
+RUN TIME: 2026-04-12 04:55:37.428385
+Traceback (most recent call last):
+  File "/Users/whizmindsacademy/quant_lab/edge1_live.py", line 81, in <module>
+    run()
+  File "/Users/whizmindsacademy/quant_lab/edge1_live.py", line 66, in run
+    trades = generate_signal()
+             ^^^^^^^^^^^^^^^^^
+  File "/Users/whizmindsacademy/quant_lab/edge1_live.py", line 25, in generate_signal
+    signal = overnight.iloc[-1]
+             ~~~~~~~~~~~~~~^^^^
+  File "/Users/whizmindsacademy/quant_lab/venv/lib/python3.12/site-packages/pandas/core/indexing.py", line 1207, in __getitem__
+    return self._getitem_axis(maybe_callable, axis=axis)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/whizmindsacademy/quant_lab/venv/lib/python3.12/site-packages/pandas/core/indexing.py", line 1773, in _getitem_axis
+    self._validate_integer(key, axis)
+  File "/Users/whizmindsacademy/quant_lab/venv/lib/python3.12/site-packages/pandas/core/indexing.py", line 1706, in _validate_integer
+    raise IndexError("single positional indexer is out-of-bounds")
+IndexError: single positional indexer is out-of-bounds
+[                       0%                       ][*******************   40%                       ]  2 of 5 completed[**********************60%****                   ]  3 of 5 completed[**********************60%****                   ]  3 of 5 completed[*********************100%***********************]  5 of 5 completed
+RUN TIME: 2026-04-14 04:50:03.327244
+
+========== EORENDA LIVE SIGNAL ==========
+No trades today.
+========================================
+
+[TIME] 2026-04-14 04:53:02.705730+08:00
+[ERROR] SIGNAL FILE NOT FOUND

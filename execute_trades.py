@@ -1,14 +1,17 @@
 from ib_insync import *
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
+import pandas as pd
 import sys
+import csv
 
 # =========================
 # CONFIG
 # =========================
-SYMBOL = "XLK"
-QUANTITY = 1
 CLIENT_ID = 10
+SIGNAL_FILE = "eorenda_signal.csv"
+TRADE_LOG = "storage/trades_log.csv"
+EQUITY_LOG = "storage/equity_curve.csv"
 
 # =========================
 # CONNECT
@@ -26,15 +29,15 @@ if not ib.isConnected():
     sys.exit()
 
 # =========================
-# TIME CHECK
+# TIME CHECK (04:50 CLOSE EXECUTION)
 # =========================
 sgt = pytz.timezone("Asia/Singapore")
 now = datetime.now(sgt)
 
 print(f"[TIME] {now}")
 
-if not (now.hour == 21 and now.minute >= 30):
-    print("[ABORT] NOT EXECUTION WINDOW")
+if not (now.hour == 4 and now.minute >= 50):
+    print("[ABORT] NOT CLOSE EXECUTION WINDOW")
     ib.disconnect()
     sys.exit()
 
@@ -51,14 +54,74 @@ if positions:
     sys.exit()
 
 # =========================
+# READ SIGNAL
+# =========================
+try:
+    signal_df = pd.read_csv(SIGNAL_FILE)
+except:
+    print("[ERROR] SIGNAL FILE NOT FOUND")
+    ib.disconnect()
+    sys.exit()
+
+if signal_df.empty:
+    print("[ERROR] SIGNAL FILE EMPTY")
+    ib.disconnect()
+    sys.exit()
+
+signal = signal_df.iloc[-1]
+
+ticker = signal["ticker"]
+action = signal["action"]
+weight = float(signal["weight"])
+timestamp_str = signal["timestamp"]
+
+print(f"[SIGNAL] {action} {ticker} weight={weight}")
+
+# =========================
+# STALE SIGNAL CHECK (CRITICAL)
+# =========================
+try:
+    signal_time = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+except:
+    print("[ERROR] INVALID SIGNAL TIMESTAMP FORMAT")
+    ib.disconnect()
+    sys.exit()
+
+# convert signal_time to SGT timezone
+signal_time = sgt.localize(signal_time)
+
+if now - signal_time > timedelta(minutes=10):
+    print("[ABORT] STALE SIGNAL")
+    ib.disconnect()
+    sys.exit()
+
+# =========================
+# ACTION CHECK
+# =========================
+if action != "BUY":
+    print("[NO TRADE] ACTION NOT BUY")
+    ib.disconnect()
+    sys.exit()
+
+# =========================
 # CONTRACT
 # =========================
-contract = Stock(SYMBOL, "SMART", "USD")
+contract = Stock(ticker, "SMART", "USD")
+
+# =========================
+# POSITION SIZING
+# =========================
+quantity = 1  # can upgrade later
+
+if quantity <= 0:
+    print("[ERROR] INVALID QUANTITY")
+    ib.disconnect()
+    sys.exit()
 
 # =========================
 # ORDER
 # =========================
-order = MarketOrder("BUY", QUANTITY)
+order = MarketOrder("BUY", quantity)
 order.outsideRth = False
 order.tif = "DAY"
 
@@ -75,10 +138,10 @@ if not trade:
 print(f"[ORDER] ID={trade.order.orderId}")
 
 # =========================
-# WAIT FOR FILL
+# WAIT FOR FILL (STRICT CLOSE WINDOW)
 # =========================
 filled = False
-MAX_WAIT = 20
+MAX_WAIT = 10
 
 for i in range(MAX_WAIT):
     ib.sleep(1)
@@ -99,7 +162,38 @@ else:
     print("[FAILED] NOT FILLED - ORDER CANCELLED")
 
 # =========================
+# LOG TRADE
+# =========================
+try:
+    with open(TRADE_LOG, "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            datetime.now(),
+            ticker,
+            action,
+            quantity,
+            trade.orderStatus.status
+        ])
+except:
+    print("[WARNING] FAILED TO LOG TRADE")
+
+# =========================
+# LOG EQUITY
+# =========================
+try:
+    account = ib.accountSummary()
+    equity = [x.value for x in account if x.tag == "NetLiquidation"]
+
+    if equity:
+        with open(EQUITY_LOG, "a", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([datetime.now(), equity[0]])
+except:
+    print("[WARNING] FAILED TO LOG EQUITY")
+
+# =========================
 # CLEAN EXIT
 # =========================
 ib.disconnect()
 print("[DONE]")
+
