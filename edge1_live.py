@@ -1,81 +1,94 @@
-import os
-os.chdir("/Users/whizmindsacademy/quant_lab")
-
-import yfinance as yf
 import pandas as pd
+import yfinance as yf
 from datetime import datetime
 
-TICKERS = ["SPY", "QQQ", "DIA", "XLK", "XLF"]
+# =========================
+# CONFIG
+# =========================
+TICKERS = ["SPY", "QQQ", "XLK", "XLF", "DIA"]
+OUTPUT_FILE = "eorenda_signal.csv"
 
+# =========================
+# SIGNAL LOGIC (EDGE #1)
+# =========================
 def generate_signal():
+    try:
+        data = yf.download(TICKERS, period="5d", interval="1d", auto_adjust=True)
 
-    data = yf.download(TICKERS, period="5d", interval="1d", group_by="ticker")
+        if data is None or data.empty:
+            print("[WARNING] No data returned from yfinance")
+            return None
 
-    close = pd.DataFrame()
-    open_ = pd.DataFrame()
+        # Use Close prices
+        close = data["Close"]
 
-    for t in TICKERS:
-        close[t] = data[t]["Close"]
-        open_[t] = data[t]["Open"]
+        if close.empty:
+            print("[WARNING] Close data empty")
+            return None
 
-    overnight = open_ / close.shift(1) - 1
-    overnight = overnight.dropna()
+        # Simple momentum: last day return
+        returns = close.pct_change().iloc[-1]
 
-    # latest signal
-    signal = overnight.iloc[-1]
+        if returns is None or returns.isnull().all():
+            print("[WARNING] Returns invalid")
+            return None
 
-    # rank
-    top_assets = signal.nlargest(3)
-    positive = top_assets[top_assets > 0]
+        # Pick best performing ETF
+        best = returns.idxmax()
 
-    if len(positive) == 0:
-        return []
+        print(f"[SIGNAL] Selected: {best}")
 
-    weights = positive / positive.sum()
-
-    trades = []
-
-    for ticker, weight in weights.items():
-        trades.append({
+        return pd.DataFrame([{
             "timestamp": datetime.now(),
-            "ticker": ticker,
+            "ticker": best,
             "action": "BUY",
-            "weight": round(weight, 4)
-        })
+            "weight": 1.0
+        }])
 
-    return trades
+    except Exception as e:
+        print(f"[ERROR] SIGNAL GENERATION FAILED: {e}")
+        return None
 
-def save_trades(trades):
+# =========================
+# MAIN EXECUTION
+# =========================
+def run():
+    try:
+        trades = generate_signal()
 
-    if len(trades) == 0:
+        if trades is None or trades.empty:
+            print("[INFO] No trades today")
+
+            df = pd.DataFrame([{
+                "timestamp": datetime.now(),
+                "ticker": "NONE",
+                "action": "NONE",
+                "weight": 0
+            }])
+        else:
+            df = trades
+
+    except Exception as e:
+        print(f"[FATAL] UNEXPECTED ERROR: {e}")
+
         df = pd.DataFrame([{
             "timestamp": datetime.now(),
             "ticker": "NONE",
             "action": "NONE",
             "weight": 0
         }])
-    else:
-        df = pd.DataFrame(trades)
 
-    df.to_csv("eorenda_signal.csv", index=False)
-
-def run():
-
-    print("RUN TIME:", datetime.now())
-    
-    trades = generate_signal()
+    # 🔴 ALWAYS WRITE FILE (CRITICAL GUARANTEE)
+    df.to_csv(OUTPUT_FILE, index=False)
 
     print("\n========== EORENDA LIVE SIGNAL ==========")
+    print(df)
+    print("=========================================")
+    print("SIGNAL FILE WRITTEN\n")
 
-    if len(trades) == 0:
-        print("No trades today.")
-    else:
-        for t in trades:
-            print(t)
-
-    save_trades(trades)
-
-    print("========================================\n")
-
+# =========================
+# ENTRY POINT
+# =========================
 if __name__ == "__main__":
+    print(f"RUN TIME: {datetime.now()}")
     run()

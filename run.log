@@ -116,3 +116,21 @@ No trades today.
 
 [TIME] 2026-04-14 04:53:02.705730+08:00
 [ERROR] SIGNAL FILE NOT FOUND
+[main c1de654] AUTO LOG 2026-04-14
+ 7 files changed, 149 insertions(+), 11 deletions(-)
+failed to store: -61
+To https://github.com/eorendal/eorenda-track-record.git
+   074478c..c1de654  main -> main
+[                       0%                       ][                       0%                       ][                       0%                       ][                       0%                       ][*********************100%***********************]  5 of 5 completed
+RUN TIME: 2026-05-14 04:50:05.755713
+[SIGNAL] Selected: QQQ
+
+========== EORENDA LIVE SIGNAL ==========
+                   timestamp ticker action  weight
+0 2026-05-14 04:50:06.371884    QQQ    BUY     1.0
+=========================================
+SIGNAL FILE WRITTEN
+
+API connection failed: ConnectionRefusedError(61, "Connect call failed ('127.0.0.1', 7497)")
+Make sure API port on TWS/IBG is open
+[ERROR] IBKR CONNECTION FAILED
