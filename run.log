@@ -134,3 +134,21 @@ SIGNAL FILE WRITTEN
 API connection failed: ConnectionRefusedError(61, "Connect call failed ('127.0.0.1', 7497)")
 Make sure API port on TWS/IBG is open
 [ERROR] IBKR CONNECTION FAILED
+[main 15c1378] AUTO LOG 2026-05-14
+ 3 files changed, 83 insertions(+), 52 deletions(-)
+failed to store: -61
+To https://github.com/eorendal/eorenda-track-record.git
+   c1de654..15c1378  main -> main
+[                       0%                       ][                       0%                       ][**********************60%****                   ]  3 of 5 completed[**********************80%*************          ]  4 of 5 completed[*********************100%***********************]  5 of 5 completed
+RUN TIME: 2026-06-04 04:50:05.394696
+[SIGNAL] Selected: QQQ
+
+========== EORENDA LIVE SIGNAL ==========
+                   timestamp ticker action  weight
+0 2026-06-04 04:50:05.959962    QQQ    BUY     1.0
+=========================================
+SIGNAL FILE WRITTEN
+
+API connection failed: ConnectionRefusedError(61, "Connect call failed ('127.0.0.1', 7497)")
+Make sure API port on TWS/IBG is open
+[ERROR] IBKR CONNECTION FAILED
